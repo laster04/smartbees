@@ -3,62 +3,10 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import {Client} from 'elasticsearch';
+
 const client = new Client({host: 'http://160.217.213.136:9502'});
 
-const tempData = client.search({
-    index: 'vcely2',
-    body: {
-        aggs: {
-            2: {
-                date_histogram: {
-                    field: "time",
-                    interval: "1m",
-                    time_zone: "UTC",
-                    min_doc_count: 1
-                },
-                aggs: {
-                    3: {
-                        terms: {
-                            field: "desc",
-                            size: 5,
-                            order: {
-                                1: "desc"
-                            }
-                        },
-                        aggs: {
-                            1: {
-                                max: {
-                                    field: "bees_t"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        stored_fields: [
-            "*"
-        ],
-        query: {
-            bool: {
-                must: [
-                    {
-                        match_all: {}
-                    },
-                    {
-                        range: {
-                            time: {
-                                gte: 1554656279417,
-                                lte: 1554659879417,
-                                format: "epoch_millis"
-                            }
-                        }
-                    }
-                ]
-            }
-        }
-    }
-});
+
 const data = [
     {
         name: 'Page A', uv: 4000, pv: 2400, amt: 2400,
@@ -82,17 +30,78 @@ const data = [
         name: 'Page G', uv: 3490, pv: 4300, amt: 2100,
     },
 ];
+
 class TemperaturePage extends PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            user: {}
+            user: {},
+            data: {}
         };
-        console.log(tempData);
     }
 
     componentDidMount() {
-        console.log(this.props.match);
+
+        client.search({
+            index: 'vcely2',
+            body: {
+                aggs: {
+                    2: {
+                        date_histogram: {
+                            field: "time",
+                            interval: "1m",
+                            time_zone: "UTC",
+                            min_doc_count: 1
+                        },
+                        aggs: {
+                            3: {
+                                terms: {
+                                    field: "desc",
+                                    size: 5,
+                                    order: {
+                                        1: "desc"
+                                    }
+                                },
+                                aggs: {
+                                    1: {
+                                        max: {
+                                            field: "bees_t"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                stored_fields: [
+                    "*"
+                ],
+                query: {
+                    bool: {
+                        must: [
+                            {
+                                match_all: {}
+                            },
+                            {
+                                range: {
+                                    time: {
+                                        gte: 1554656279417,
+                                        lte: 1554659879417,
+                                        format: "epoch_millis"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }, (err, result) => {
+            let tempData = {};
+            result.aggregations[2].buckets.forEach(d => {
+                let time = d.key;
+
+            })
+        });
         this.setState({
             user: JSON.parse(localStorage.getItem('user'))
         });
@@ -109,13 +118,13 @@ class TemperaturePage extends PureComponent {
                     top: 5, right: 30, left: 20, bottom: 5,
                 }}
             >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="pv" stroke="#8884d8" activeDot={{ r: 8 }} />
-                <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
+                <CartesianGrid strokeDasharray="3 3"/>
+                <XAxis dataKey="name"/>
+                <YAxis/>
+                <Tooltip/>
+                <Legend/>
+                <Line type="monotone" dataKey="pv" stroke="#8884d8" activeDot={{r: 8}}/>
+                <Line type="monotone" dataKey="uv" stroke="#82ca9d"/>
             </LineChart>
         );
     }
